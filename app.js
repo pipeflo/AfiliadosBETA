@@ -1,41 +1,69 @@
-/*jshint node:true*/
 
-// app.js
-// This file contains the server side JavaScript code for your application.
-// This sample application uses express as web application framework (http://expressjs.com/),
-// and jade as template engine (http://jade-lang.com/).
+/**
+ * Module dependencies.
+ */
 
 var express = require('express');
+var routes = require('./routes');
+var http = require('http');
+var path = require('path');
 
-// setup middleware
+//load customers route
+var customers = require('./routes/customers'); 
 var app = express();
+
+var connection  = require('express-myconnection'); 
+var mysql = require('mysql');
+
+// all environments
+app.set('port', process.env.PORT || 4300);
+app.set('views', path.join(__dirname, 'views'));
+app.set('view engine', 'ejs');
+//app.use(express.favicon());
+app.use(express.logger('dev'));
+app.use(express.json());
+app.use(express.urlencoded());
+app.use(express.methodOverride());
+
+app.use(express.static(path.join(__dirname, 'public')));
+
+// development only
+if ('development' == app.get('env')) {
+  app.use(express.errorHandler());
+}
+
+/*------------------------------------------
+    connection peer, register as middleware
+    type koneksi : single,pool and request 
+-------------------------------------------*/
+
+app.use(
+    
+    connection(mysql,{
+        
+        host: '75.126.23.246',
+        user: 'uW68hjokQAHmN',
+        password : 'pLlJBqRMPcsZs',
+        port : 3307, //port mysql
+        database:'test'
+
+    },'pool') //or single
+
+);
+
+
+
+app.get('/', routes.index);
+app.get('/customers', customers.list);
+app.get('/customers/add', customers.add);
+app.post('/customers/add', customers.save);
+app.get('/customers/delete/:id', customers.delete_customer);
+app.get('/customers/edit/:id', customers.edit);
+app.post('/customers/edit/:id',customers.save_edit);
+
+
 app.use(app.router);
-app.use(express.errorHandler());
-app.use(express.static(__dirname + '/public')); //setup static public directory
-app.set('view engine', 'jade');
-app.set('views', __dirname + '/views'); //optional since express defaults to CWD/views
 
-// render index page
-app.get('/', function(req, res){
-	res.render('index');
+http.createServer(app).listen(app.get('port'), function(){
+  console.log('Express server listening on port ' + app.get('port'));
 });
-
-// There are many useful environment variables available in process.env.
-// VCAP_APPLICATION contains useful information about a deployed application.
-var appInfo = JSON.parse(process.env.VCAP_APPLICATION || "{}");
-// TODO: Get application information and use it in your app.
-
-// VCAP_SERVICES contains all the credentials of services bound to
-// this application. For details of its content, please refer to
-// the document or sample of each service.
-var services = JSON.parse(process.env.VCAP_SERVICES || "{}");
-// TODO: Get service credentials and communicate with bluemix services.
-
-// The IP address of the Cloud Foundry DEA (Droplet Execution Agent) that hosts this application:
-var host = (process.env.VCAP_APP_HOST || 'localhost');
-// The port on the DEA for communication with the application:
-var port = (process.env.VCAP_APP_PORT || 3000);
-// Start server
-app.listen(port, host);
-console.log('App started on port ' + port);
-
