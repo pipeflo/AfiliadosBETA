@@ -1,0 +1,11 @@
+applications:
+- services:
+  - mysqlafiliados
+  disk_quota: 1024M
+  host: afiliadosbeta
+  name: afiliadosbeta
+  command: node app.js
+  path: .
+  domain: mybluemix.net
+  instances: 1
+  memory: 128M
